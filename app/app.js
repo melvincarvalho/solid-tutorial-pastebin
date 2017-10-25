@@ -22,7 +22,7 @@ Pastebin = (function () {
         if (defaultContainer.lastIndexOf('/') != defaultContainer.length - 1) {
             defaultContainer += '/';
         }
-        console.log(defaultContainer)
+        console.log('defaultContainer', defaultContainer)
 
         if (queryVals['view'] && queryVals['view'].length > 0) {
             load(queryVals['view']);
@@ -73,6 +73,7 @@ Pastebin = (function () {
     function publish () {
         bin.title = document.getElementById('edit-title').value;
         bin.body = document.getElementById('edit-body').value;
+        bin.url = document.getElementById('post-url').value;
 
         var graph = $rdf.graph();
         var thisResource = $rdf.sym('');
@@ -80,7 +81,7 @@ Pastebin = (function () {
         graph.add(thisResource, vocab.sioc('content'), $rdf.lit(bin.body));
         var data = new $rdf.Serializer(graph).toN3(graph);
 
-        solid.web.post(defaultContainer, data).then(function(meta) {
+        solid.web.post(bin.url, data).then(function(meta) {
             // view
             var url = meta.url;
             if (url && url.slice(0,4) != 'http') {
@@ -99,6 +100,7 @@ Pastebin = (function () {
     function update () {
         bin.title = document.getElementById('edit-title').value;
         bin.body = document.getElementById('edit-body').value;
+        bin.url = document.getElementById('post-url').value;
 
         var graph = $rdf.graph();
         var thisResource = $rdf.sym('');
