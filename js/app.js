@@ -32,6 +32,8 @@ Pastebin = (function () {
             console.log('new pastebin form');
             document.getElementById('submit')
                 .setAttribute('onclick', 'Pastebin.publish()');
+            document.getElementById('login')
+                .setAttribute('onclick', 'Pastebin.login()');
             document.getElementById('edit').classList.remove('hidden');
         }
     }
@@ -70,6 +72,11 @@ Pastebin = (function () {
         });
     }
 
+
+    function login () {
+      SolidUtils.login()
+    }
+
     function publish () {
         bin.title = document.getElementById('edit-title').value;
         bin.body = document.getElementById('edit-body').value;
@@ -81,14 +88,24 @@ Pastebin = (function () {
         graph.add(thisResource, vocab.sioc('content'), $rdf.lit(bin.body));
         var data = new $rdf.Serializer(graph).toN3(graph);
 
-        solid.web.post(bin.url, data).then(function(meta) {
+        SolidAuthClient.fetch(bin.url, {
+            'method': 'POST',
+            'body': data,
+            'headers': {
+                'Content-Type': 'text/turtle'
+            }
+        }).then(function(response) {
+            console.log(response)
+            console.log(response.headers)
+            console.log(response.headers.get('Location'))
+
             // view
-            var url = meta.url;
+            var url = response.headers.get('Location');
             if (url && url.slice(0,4) != 'http') {
                 if (url.indexOf('/') === 0) {
                     url = url.slice(1, url.length);
                 }
-                url = defaultContainer + url.slice(url.lastIndexOf('/') + 1, url.length);
+                url = bin.url + url.slice(url.lastIndexOf('/') + 1, url.length);
             }
             window.location.search = "?view="+encodeURIComponent(url);
         }).catch(function(err) {
@@ -108,9 +125,18 @@ Pastebin = (function () {
         graph.add(thisResource, vocab.sioc('content'), bin.body);
         var data = new $rdf.Serializer(graph).toN3(graph);
 
-        solid.web.put(bin.url, data).then(function(meta) {
+        SolidAuthClient.fetch(bin.url, {
+            'method': 'PUT',
+            'body': data,
+            'headers': {
+                'Content-Type': 'text/turtle'
+            }
+        }).then(function(response) {
             // view
-            window.location.search = "?view="+encodeURIComponent(meta.url);
+            console.log(response)
+            return
+            var location = response.headers.get('Location')
+            window.location.search = "?view="+encodeURIComponent(bin.url + location);
         }).catch(function(err) {
             // do something with the error
             console.log(err);
@@ -137,6 +163,7 @@ Pastebin = (function () {
     // return public functions
     return {
         publish: publish,
-        update: update
+        update: update,
+        login: login
     };
 }(this));
