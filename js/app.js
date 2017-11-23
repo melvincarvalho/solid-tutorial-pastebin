@@ -39,33 +39,39 @@ Pastebin = (function () {
     }
 
     function load (url, showEditor) {
-        solid.web.get(url).then(function(response) {
-            var graph = response.parsedGraph();
-            // set url
-            bin.url = response.url;
-            var subject = $rdf.sym(response.url);
-            // add title
-            var title = graph.any(subject, vocab.dct('title'));
-            if (title) {
-                bin.title = title.value;
-            }
-            // add body
-            var body = graph.any(subject, vocab.sioc('content'));
-            if (body) {
-                bin.body = body.value;
-            }
+        SolidAuthClient.fetch(url, {}).then(function(response) {
+          response.text().then(rdf => {
+              var graph = $rdf.graph()
+              var mime = 'text/turtle'
+              $rdf.parse(rdf, graph, url, mime)
+              // set url
+              bin.url = url;
+              var subject = $rdf.sym(response.url);
+              // add title
+              var title = graph.any(subject, vocab.dct('title'));
+              if (title) {
+                  bin.title = title.value;
+              }
+              // add body
+              var body = graph.any(subject, vocab.sioc('content'));
+              if (body) {
+                  bin.body = body.value;
+              }
 
-            if (showEditor) {
-                document.getElementById('edit-title').value = bin.title;
-                document.getElementById('edit-body').innerHTML = bin.body;
-                document.getElementById('submit').setAttribute('onclick',
-                    'Pastebin.update()');
-                document.getElementById('edit').classList.remove('hidden');
-            } else {
-                document.getElementById('view-title').innerHTML = bin.title;
-                document.getElementById('view-body').innerHTML = bin.body;
-                document.getElementById('view').classList.remove('hidden');
-            }
+              if (showEditor) {
+                  document.getElementById('edit-title').value = bin.title;
+                  document.getElementById('edit-body').innerHTML = bin.body;
+                  document.getElementById('post-url').value = bin.url;
+                  document.getElementById('submit').setAttribute('onclick',
+                      'Pastebin.update()');
+                  document.getElementById('edit').classList.remove('hidden');
+              } else {
+                  document.getElementById('view-title').innerHTML = bin.title;
+                  document.getElementById('view-body').innerHTML = bin.body;
+                  document.getElementById('view').classList.remove('hidden');
+              }
+          })
+
         }).catch(function(err) {
             // do something with the error
             console.log(err);
